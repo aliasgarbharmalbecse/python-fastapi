@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# dotenv environment variables
+.env
+.env.*
+
+# macOS system files
+.DS_Store
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+
+# mypy
+.mypy_cache/
+
+# pytest
+.pytest_cache/
+
+# coverage reports
+htmlcov/
+coverage.xml
+*.cover
+*.log
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Logs
+*.log
+
+# FastAPI OpenAPI cache (if used)
+.openapi.json
