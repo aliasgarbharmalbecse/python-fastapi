@@ -1,21 +1,46 @@
-from typing import Optional, ClassVar, List
-
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, UUID4
+from typing import Optional, List
+from pydantic import BaseModel, Field, EmailStr, UUID4
 import uuid
 
+from typing_extensions import ClassVar
 
+
+# ---------------- Role Schemas ----------------
 class RoleBase(BaseModel):
     name: str
 
 
 class RoleCreate(RoleBase):
+    id: Optional[UUID4] = Field(default_factory=uuid.uuid4)
+
+
+class RoleUpdate(BaseModel):
+    name: Optional[str] = None
+
+
+class RoleResponse(RoleBase):
+    id: UUID4
+    permissions: Optional[List[UUID4]] = None  # List of permission IDs
+
+    class Config:
+        from_attributes = True
+
+
+# ---------------- Permission Schemas ----------------
+class PermissionBase(BaseModel):
+    name: str
+
+
+class PermissionCreate(PermissionBase):
     pass
 
 
-class RoleUpdate(RoleBase):
-    id: uuid.UUID
+class PermissionResponse(PermissionBase):
+    id: UUID4
+    roles: Optional[List[UUID4]] = None  # List of role IDs
 
-    model_config = ConfigDict(extra="forbid")  # Disallow extra fields
+    class Config:
+        from_attributes = True
 
     json_schema_extra: ClassVar[dict] = {
         "example": {
@@ -24,19 +49,19 @@ class RoleUpdate(RoleBase):
         }
     }
 
-
-# Base User Schema
+# ---------------- User Schemas ----------------
 class UserBase(BaseModel):
     firstname: str
     lastname: str
     email: EmailStr
     phone: Optional[str] = None
-    department_name: Optional[str] = None
+    department_id: Optional[UUID4] = None
+    reports_to: Optional[UUID4] = None  # Manager ID
 
 
 class UserCreate(UserBase):
     password: str
-    roles: List[str]  # Accepts role names, not IDs
+    roles: List[UUID4]  # Accepts list of Role IDs
 
 
 class UserUpdate(UserBase):
