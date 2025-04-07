@@ -2,7 +2,7 @@ import uuid
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, selectinload
-from schemas.users_schema import UserCreate, UserResponse, UserUpdate
+from schemas.users_schema import UserCreate, UserResponse, UserUpdate, UserValidateResponse
 from models.user_model import User, UserRole, Role, Department
 from utilities.auth_utlis import get_password_hash
 
@@ -17,17 +17,20 @@ class UserRepository:
         if user_exists:
             raise HTTPException(status_code=400, detail="User already exists")
 
+        if user_data.phone:
+            phone_exists = self.db.query(User).filter(User.phone == user_data.phone).first()
+            if phone_exists:
+                raise HTTPException(status_code=400, detail="User with this phone number already exists")
+
         ## create password hash
         password_hash = get_password_hash(user_data.password)
 
         ##get roles and check if they exists. Create new if they don't and retunr them in array
         roles = []
-        for role_name in user_data.roles:
-            role = self.db.query(Role).filter(Role.name == role_name).first()
+        for role_id in user_data.roles:
+            role = self.db.query(Role).filter(Role.id == role_id).first()
             if not role:
-                role = Role(name=role_name)
-                self.db.add(role)
-                self.db.flush()  # Ensure role has an ID
+                raise HTTPException(status_code=400, detail=f"Role with id {role_id} doesn't exist")
 
             roles.append(role)
 
@@ -49,6 +52,7 @@ class UserRepository:
             phone=user_data.phone,
             hashed_password=password_hash,
             department_id=department.id if department else None,
+            reports_to=user_data.reports_to if user_data.reports_to else None,
             roles=[UserRole(role_id=role.id) for role in roles]
         )
 
@@ -62,7 +66,8 @@ class UserRepository:
             lastname=user.lastname,
             email=user.email,
             phone=user.phone,
-            roles=[role.name for role in roles],
+            roles=[{"name": role.name, "id": role.id} for role in roles],
+            reports_to=user.reports_to,
             department_name=department.department_name if department else None
         )
 
@@ -76,7 +81,7 @@ class UserRepository:
     def get_user_by_email(self, email_id):
         user = (
             self.db.query(User)
-            .options(selectinload(User.roles).selectinload(UserRole.role))  # Load role names
+            .options(selectinload(User.roles).selectinload(UserRole.role).selectinload(Role.permissions))
             .options(selectinload(User.department))  # Load department
             .filter(User.email == email_id)
             .first()
@@ -85,21 +90,29 @@ class UserRepository:
         if user is None:
             raise HTTPException(status_code=404, detail="User doesn't exist")
 
-        return UserResponse(
+        # Extract permissions from roles
+        permissions_set = set()
+        for user_role in user.roles:
+            for permission in user_role.role.permissions:
+                permissions_set.add(permission.name)
+
+        return UserValidateResponse(
             id=user.id,
             firstname=user.firstname,
             lastname=user.lastname,
             email=user.email,
             phone=user.phone,
             hashed_password=user.hashed_password,
-            roles=[{"name" : user_role.role.name, "id" : user_role.role.id} for user_role in user.roles],  # Extract role names correctly
-            department_name=user.department.department_name if user.department else None
+            roles=[{"name": user_role.role.name, "id": user_role.role.id} for user_role in user.roles],
+            # Extract role names correctly
+            department_name=user.department.department_name if user.department else None,
+            permissions=list(permissions_set)
         )
 
     def get_user_by_id(self, id):
         user = (
             self.db.query(User)
-            .options(selectinload(User.roles).selectinload(UserRole.role))  # Load role names
+            .options(selectinload(User.roles).selectinload(UserRole.role).selectinload(Role.permissions))
             .options(selectinload(User.department))  # Load department
             .filter(User.id == id)
             .first()
@@ -108,6 +121,11 @@ class UserRepository:
         if user is None:
             raise HTTPException(status_code=404, detail="User doesn't exist")
 
+        # Extract permissions from roles
+        permissions_set = set()
+        for user_role in user.roles:
+            for permission in user_role.role.permissions:
+                permissions_set.add(permission.name)
 
         return UserResponse(
             id=user.id,
@@ -115,8 +133,10 @@ class UserRepository:
             lastname=user.lastname,
             email=user.email,
             phone=user.phone,
-            roles=[{"name" : user_role.role.name, "id" : user_role.role.id} for user_role in user.roles],  # Extract role names correctly
-            department_name=user.department.department_name if user.department else None
+            roles=[{"name": user_role.role.name, "id": user_role.role.id} for user_role in user.roles],
+            # Extract role names correctly
+            department_name=user.department.department_name if user.department else None,
+            permissions=list(permissions_set)
         )
 
     def update_user(self, user_data: UserUpdate):
@@ -176,6 +196,5 @@ class UserRepository:
             firstname=user.firstname,
             lastname=user.lastname,
             email=user.email,
-            phone=user.phone,
-            department_name=user.department.department_name if user.department else None
+            phone=user.phone
         )

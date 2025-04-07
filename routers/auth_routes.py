@@ -8,6 +8,8 @@ from configurations.database import get_db
 from repositories.users.users_repository import UserRepository
 from utilities.auth_utlis import verify_password, generate_tokens, verify_access_token, generate_access_token, \
     verify_refresh_token, security
+from models.user_model import User
+from utilities.permission_utlis import register_permission, enforce_permissions_dependency
 
 router = APIRouter(
     prefix="/auth",
@@ -58,6 +60,7 @@ def refresh_access_token(
 
 
 @router.get('/protected-route')
-def test_method(current_user: dict = Depends(verify_access_token)):
+@register_permission("check_user")
+def test_method(current_user: User = Depends(enforce_permissions_dependency)):
     print(current_user)
     pass

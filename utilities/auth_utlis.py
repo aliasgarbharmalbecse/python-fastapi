@@ -13,7 +13,6 @@ from starlette import status
 # Load environment variables
 load_dotenv()
 
-
 security = HTTPBearer()
 
 # Constants
@@ -79,8 +78,13 @@ def verify_refresh_token(token: str) -> Optional[dict]:
 
 
 def generate_tokens(user):
+    print(user,"generate token")
     access_token = create_access_token(
-        {"sub": str(user.id), "roles": [role["name"] for role in user.roles]}
+        {
+            "sub": str(user.id),
+            "roles": [role["name"] for role in user.roles],
+            "permissions": user.permissions if hasattr(user, "permissions") else []
+        }
     )
 
     refresh_token = create_refresh_token({"sub": str(user.id)})
@@ -94,7 +98,11 @@ def generate_tokens(user):
 
 def generate_access_token(user):
     access_token = create_access_token(
-        {"sub": str(user.id), "roles": [role["name"] for role in user.roles]}
+        {
+            "sub": str(user.id),
+            "roles": [role["name"] for role in user.roles],
+            "permissions": user.permissions if hasattr(user, "permissions") else []
+        }
     )
 
     return {

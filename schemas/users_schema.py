@@ -11,7 +11,7 @@ class RoleBase(BaseModel):
 
 
 class RoleCreate(RoleBase):
-    id: Optional[UUID4] = Field(default_factory=uuid.uuid4)
+    pass
 
 
 class RoleUpdate(BaseModel):
@@ -49,13 +49,14 @@ class PermissionResponse(PermissionBase):
         }
     }
 
+
 # ---------------- User Schemas ----------------
 class UserBase(BaseModel):
     firstname: str
     lastname: str
     email: EmailStr
     phone: Optional[str] = None
-    department_id: Optional[UUID4] = None
+    department_name: Optional[str] = None
     reports_to: Optional[UUID4] = None  # Manager ID
 
 
@@ -68,15 +69,20 @@ class UserUpdate(UserBase):
     is_active: Optional[bool]
     password: Optional[str] = None
     roles: Optional[List[str]] = None
+    department_name: Optional[str] = None
 
 
 class UserResponse(UserBase):
     id: UUID4
     roles: Optional[List[dict]] = None
-    hashed_password: Optional[str] = None
+    permissions: Optional[List[str]] = None  # List of permission names
 
     class Config:
         from_attributes = True  # Allows SQLAlchemy objects to be converted
+
+
+class UserValidateResponse(UserResponse):
+    hashed_password: str
 
 
 # User Role Assignment Schema

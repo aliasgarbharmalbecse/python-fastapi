@@ -28,7 +28,7 @@ class RoleRepository:
         if role:
             self.db.delete(role)
             self.db.commit()
-            return role
+            return role.name
         raise HTTPException(status_code=404, detail="role doesn't exist")
 
     def update_role(self, role: RoleUpdate):
