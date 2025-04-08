@@ -78,7 +78,6 @@ def verify_refresh_token(token: str) -> Optional[dict]:
 
 
 def generate_tokens(user):
-    print(user,"generate token")
     access_token = create_access_token(
         {
             "sub": str(user.id),

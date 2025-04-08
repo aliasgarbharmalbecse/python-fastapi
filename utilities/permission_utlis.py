@@ -20,7 +20,6 @@ def register_permission(permission: str):
 # Query all permissions for the user from their roles
 def get_user_permissions(user: User) -> Set[str]:
     permissions = set()
-    print(user, "user")
     for resource in user.get("permissions"):
         permissions.add(resource)
     return permissions
