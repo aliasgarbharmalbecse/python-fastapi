@@ -6,12 +6,15 @@ from utilities.auth_utlis import verify_access_token
 
 # Registry to track which endpoints use which permissions
 permission_registry: Dict[str, str] = {}
+all_registered_permissions: Set[str] = set()
 
 
 # Register a permission with an endpoint
 def register_permission(permission: str):
     def decorator(func: Callable):
-        permission_registry[func.__name__] = permission or func.__name__
+        final_permission = permission or func.__name__
+        permission_registry[func.__name__] = final_permission
+        all_registered_permissions.add(final_permission)
         return func
 
     return decorator
@@ -27,8 +30,8 @@ def get_user_permissions(user: User) -> Set[str]:
 
 # Main permission enforcement dependency
 def enforce_permissions_dependency(
-    request: Request,
-    user: User = Depends(verify_access_token),
+        request: Request,
+        user: User = Depends(verify_access_token),
 ):
     #Get the actual route handler function
     endpoint_func = request.scope.get("endpoint")
@@ -41,4 +44,3 @@ def enforce_permissions_dependency(
                 raise HTTPException(status_code=403, detail="Permission denied")
 
     return user
-

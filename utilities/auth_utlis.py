@@ -78,11 +78,33 @@ def verify_refresh_token(token: str) -> Optional[dict]:
 
 
 def generate_tokens(user):
+
+    roles = user.roles
+    access_context = [
+        {
+            "role": r["name"],
+            "hierarchy_level": r["hierarchy_level"],
+            "can_cross_departments": r["can_cross_departments"]
+        }
+        for r in roles
+    ]
+
+    min_level = min(r["hierarchy_level"] for r in access_context)
+    can_cross = any(
+        r["hierarchy_level"] == min_level and r["can_cross_departments"]
+        for r in access_context
+    )
+
     access_token = create_access_token(
         {
             "sub": str(user.id),
-            "roles": [role["name"] for role in user.roles],
-            "permissions": user.permissions if hasattr(user, "permissions") else []
+            "roles": [r["name"] for r in roles],
+            "permissions": user.permissions if hasattr(user, "permissions") else [],
+            "access_context": access_context,
+            "hierarchy_level": min_level,
+            "can_cross_departments": can_cross,
+            "department": user.department_name or None,
+            "reports_to": str(user.reports_to) if user.reports_to else None
         }
     )
 
@@ -96,11 +118,32 @@ def generate_tokens(user):
 
 
 def generate_access_token(user):
+    roles = user.roles
+    access_context = [
+        {
+            "role": r["name"],
+            "hierarchy_level": r["hierarchy_level"],
+            "can_cross_departments": r["can_cross_departments"]
+        }
+        for r in roles
+    ]
+
+    min_level = min(r["hierarchy_level"] for r in access_context)
+    can_cross = any(
+        r["hierarchy_level"] == min_level and r["can_cross_departments"]
+        for r in access_context
+    )
+
     access_token = create_access_token(
         {
             "sub": str(user.id),
-            "roles": [role["name"] for role in user.roles],
-            "permissions": user.permissions if hasattr(user, "permissions") else []
+            "roles": [r["name"] for r in roles],
+            "permissions": user.permissions if hasattr(user, "permissions") else [],
+            "access_context": access_context,
+            "hierarchy_level": min_level,
+            "can_cross_departments": can_cross,
+            "department": user.department_name or None,
+            "reports_to": str(user.reports_to) if user.reports_to else None
         }
     )
 

@@ -103,7 +103,12 @@ class UserRepository:
             email=user.email,
             phone=user.phone,
             hashed_password=user.hashed_password,
-            roles=[{"name": user_role.role.name, "id": user_role.role.id} for user_role in user.roles],
+            roles=[{
+                "name": user_role.role.name,
+                "id": user_role.role.id,
+                "hierarchy_level": user_role.role.hierarchy_level,
+                "can_cross_departments": user_role.role.can_cross_departments
+            } for user_role in user.roles],
             # Extract role names correctly
             department_name=user.department.department_name if user.department else None,
             permissions=list(permissions_set)
@@ -133,7 +138,12 @@ class UserRepository:
             lastname=user.lastname,
             email=user.email,
             phone=user.phone,
-            roles=[{"name": user_role.role.name, "id": user_role.role.id} for user_role in user.roles],
+            roles=[{
+                "name": user_role.role.name,
+                "id": user_role.role.id,
+                "hierarchy_level": user_role.role.hierarchy_level,
+                "can_cross_departments": user_role.role.can_cross_departments
+            } for user_role in user.roles],
             # Extract role names correctly
             department_name=user.department.department_name if user.department else None,
             permissions=list(permissions_set)

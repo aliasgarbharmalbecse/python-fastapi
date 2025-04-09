@@ -1,9 +1,10 @@
+from sqlalchemy import Column, String, Boolean, Integer, ForeignKey, Table, DateTime
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 import uuid
 from datetime import datetime
-from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import String, UUID, Boolean, DateTime, ForeignKey, Table, Column
+from typing import List, Optional
 from configurations.database import Base
-from typing import Optional, List
 
 # Association table for Role-Permission many-to-many relationship
 role_permissions = Table(
@@ -12,7 +13,6 @@ role_permissions = Table(
     Column("role_id", UUID(as_uuid=True), ForeignKey("roles.id", ondelete="CASCADE"), primary_key=True),
     Column("permission_id", UUID(as_uuid=True), ForeignKey("permissions.id", ondelete="CASCADE"), primary_key=True)
 )
-
 
 class User(Base):
     __tablename__ = "users"
@@ -31,7 +31,9 @@ class User(Base):
     reports_to: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    roles: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
+
+    roles: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="user",
+                                                   cascade="all, delete-orphan")
     department: Mapped[Optional["Department"]] = relationship("Department", foreign_keys=[department_id],
                                                               back_populates="users")
     headed_department: Mapped[List["Department"]] = relationship(
@@ -40,17 +42,18 @@ class User(Base):
         back_populates="head_user"
     )
 
-
 class Role(Base):
     __tablename__ = "roles"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    hierarchy_level: Mapped[int] = mapped_column(Integer, nullable=False, default=99)  # lower = higher in hierarchy
+    can_cross_departments: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    users: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="role", cascade="all, delete-orphan")
+    users: Mapped[List["UserRole"]] = relationship("UserRole", back_populates="role",
+                                                   cascade="all, delete-orphan")
     permissions: Mapped[List["Permission"]] = relationship("Permission", secondary=role_permissions,
                                                            back_populates="roles")
-
 
 class UserRole(Base):
     __tablename__ = "user_roles"
@@ -62,7 +65,6 @@ class UserRole(Base):
     user: Mapped["User"] = relationship("User", back_populates="roles")
     role: Mapped["Role"] = relationship("Role", back_populates="users")
 
-
 class Permission(Base):
     __tablename__ = "permissions"
 
@@ -70,7 +72,6 @@ class Permission(Base):
     name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
 
     roles: Mapped[List["Role"]] = relationship("Role", secondary=role_permissions, back_populates="permissions")
-
 
 class Department(Base):
     __tablename__ = "departments"
@@ -82,6 +83,7 @@ class Department(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    users: Mapped[List["User"]] = relationship("User", foreign_keys="[User.department_id]", back_populates="department")
+    users: Mapped[List["User"]] = relationship("User", foreign_keys="[User.department_id]",
+                                               back_populates="department")
     head_user: Mapped[Optional["User"]] = relationship("User", foreign_keys=[department_head],
                                                        back_populates="headed_department")

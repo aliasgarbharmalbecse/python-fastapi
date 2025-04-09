@@ -8,14 +8,16 @@ from typing_extensions import ClassVar
 # ---------------- Role Schemas ----------------
 class RoleBase(BaseModel):
     name: str
+    hierarchy_level: int = Field(default=99, description="Lower number = higher in hierarchy")
+    can_cross_departments: bool = Field(default=False, description="Can this role cross departments?")
 
 
 class RoleCreate(RoleBase):
     pass
 
 
-class RoleUpdate(BaseModel):
-    name: Optional[str] = None
+class RoleUpdate(RoleBase):
+    id: UUID4
 
 
 class RoleResponse(RoleBase):
@@ -89,3 +91,9 @@ class UserValidateResponse(UserResponse):
 class UserRoleAssign(BaseModel):
     user_id: UUID4
     role_name: str
+
+
+# ---------------- Permission Schemas ----------------
+class RolePermissionAssign(BaseModel):
+    role_id: UUID4
+    permission_ids: List[UUID4]

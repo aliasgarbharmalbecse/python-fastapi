@@ -43,7 +43,6 @@ def refresh_access_token(
         db: Session = Depends(get_db)
 ):
     refresh_token = authorization.credentials  # Extract token directly
-
     payload = verify_refresh_token(refresh_token)
     user_id = payload.get("sub")
 
