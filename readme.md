@@ -91,3 +91,7 @@ from utilities.permissions import permission_registry
 print(permission_registry)
 # Output: {'create_user': 'create_user', 'test_method': 'check_user', ...}
 ```
+
+``User with all permissions``
+A user role with hierarchy level as 0 will be able to access everything. 
+```Neve give any role hirerachy 0 unless you want them to access everything.```

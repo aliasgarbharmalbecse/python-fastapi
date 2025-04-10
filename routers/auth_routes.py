@@ -56,10 +56,3 @@ def refresh_access_token(
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     return generate_access_token(user)
-
-
-@router.get('/protected-route')
-@register_permission("check_user")
-def test_method(current_user: User = Depends(enforce_permissions_dependency)):
-    print(current_user)
-    pass

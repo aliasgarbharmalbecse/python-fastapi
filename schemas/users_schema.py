@@ -58,7 +58,7 @@ class UserBase(BaseModel):
     lastname: str
     email: EmailStr
     phone: Optional[str] = None
-    department_name: Optional[str] = None
+    department_name: str = None
     reports_to: Optional[UUID4] = None  # Manager ID
 
 
@@ -78,7 +78,7 @@ class UserResponse(UserBase):
     id: UUID4
     roles: Optional[List[dict]] = None
     permissions: Optional[List[str]] = None  # List of permission names
-
+    department: dict
     class Config:
         from_attributes = True  # Allows SQLAlchemy objects to be converted
 
