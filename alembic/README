@@ -1,1 +1,66 @@
-Generic single-database configuration.
+- Initialize Alembic (First-time setup)
+alembic init alembic
+
+- Edit alembic.ini
+Open alembic.ini and set the database URL:
+sqlalchemy.url = postgresql://user:password@localhost:5432/database_name
+
+- Edit env.py
+In alembic/env.py, set the target metadata to your model's metadata:
+Import you model's metadata
+
+- Check Alembic Migration History
+alembic history
+- Create a Migration Script. This autogenerates the migration script based on the current state of the database and your models.
+alembic revision --autogenerate -m "Initial migration"
+- Apply the Migration
+alembic upgrade head
+
+- Downgrade the Migration
+alembic downgrade -1
+
+- Show the Current Migration Version
+alembic current
+
+- Show the Migration History
+alembic history --verbose
+
+- Show the Migration Script
+alembic show <revision_id>
+
+- Manually Create a Migration
+alembic revision -m "Add new table"
+
+- Edit the Migration Script
+Open the newly created migration script in alembic/versions and edit it to define the changes you want to make to the database schema.
+
+- Downgrade to a Specific Migration
+alembic downgrade <revision_id>
+
+- Upgrade to a Specific Migration
+alembic upgrade <revision_id>
+
+- Reset Database to the Latest Migration
+alembic upgrade head
+
+- Tells Alembic to consider the database schema up to date without applying migrations.
+alembic stamp head
+
+Troubleshooting
+- If Alembic Shows a Missing Revision Error
+alembic stamp head
+alembic upgrade head
+
+This resets Alembic to the latest version and reapplies migrations.
+
+- If You Need to Recreate Migrations
+rm -rf alembic/versions/*
+alembic revision --autogenerate -m "Recreate migrations"
+alembic upgrade head
+
+Deletes all old migrations and recreates them.
+
+
+
+
+

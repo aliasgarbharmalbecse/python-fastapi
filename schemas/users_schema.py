@@ -1,11 +1,15 @@
-from typing import Optional, ClassVar, List
-
-from pydantic import BaseModel, Field, ConfigDict, EmailStr, UUID4
+from typing import Optional, List
+from pydantic import BaseModel, Field, EmailStr, UUID4
 import uuid
 
+from typing_extensions import ClassVar
 
+
+# ---------------- Role Schemas ----------------
 class RoleBase(BaseModel):
     name: str
+    hierarchy_level: int = Field(default=99, description="Lower number = higher in hierarchy")
+    can_cross_departments: bool = Field(default=False, description="Can this role cross departments?")
 
 
 class RoleCreate(RoleBase):
@@ -13,9 +17,32 @@ class RoleCreate(RoleBase):
 
 
 class RoleUpdate(RoleBase):
-    id: uuid.UUID
+    id: UUID4
 
-    model_config = ConfigDict(extra="forbid")  # Disallow extra fields
+
+class RoleResponse(RoleBase):
+    id: UUID4
+    permissions: Optional[List[UUID4]] = None  # List of permission IDs
+
+    class Config:
+        from_attributes = True
+
+
+# ---------------- Permission Schemas ----------------
+class PermissionBase(BaseModel):
+    name: str
+
+
+class PermissionCreate(PermissionBase):
+    pass
+
+
+class PermissionResponse(PermissionBase):
+    id: UUID4
+    roles: Optional[List[UUID4]] = None  # List of role IDs
+
+    class Config:
+        from_attributes = True
 
     json_schema_extra: ClassVar[dict] = {
         "example": {
@@ -25,36 +52,48 @@ class RoleUpdate(RoleBase):
     }
 
 
-# Base User Schema
+# ---------------- User Schemas ----------------
 class UserBase(BaseModel):
     firstname: str
     lastname: str
     email: EmailStr
     phone: Optional[str] = None
-    department_name: Optional[str] = None
+    department_name: str = None
+    reports_to: Optional[UUID4] = None  # Manager ID
 
 
 class UserCreate(UserBase):
     password: str
-    roles: List[str]  # Accepts role names, not IDs
+    roles: List[UUID4]  # Accepts list of Role IDs
 
 
 class UserUpdate(UserBase):
     is_active: Optional[bool]
     password: Optional[str] = None
     roles: Optional[List[str]] = None
+    department_name: Optional[str] = None
 
 
 class UserResponse(UserBase):
     id: UUID4
     roles: Optional[List[dict]] = None
-    hashed_password: Optional[str] = None
-
+    permissions: Optional[List[str]] = None  # List of permission names
+    department: dict
     class Config:
         from_attributes = True  # Allows SQLAlchemy objects to be converted
+
+
+class UserValidateResponse(UserResponse):
+    hashed_password: str
 
 
 # User Role Assignment Schema
 class UserRoleAssign(BaseModel):
     user_id: UUID4
     role_name: str
+
+
+# ---------------- Permission Schemas ----------------
+class RolePermissionAssign(BaseModel):
+    role_id: UUID4
+    permission_ids: List[UUID4]
