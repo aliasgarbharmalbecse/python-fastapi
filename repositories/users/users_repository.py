@@ -112,7 +112,8 @@ class UserRepository:
             # Extract role names correctly
             department_name=user.department.department_name if user.department else None,
             permissions=list(permissions_set),
-            department={"id": user.department.id, "name": user.department.department_name} if user.department else None
+            department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
+            timezone=user.timezone if user.timezone else None
         )
 
     def get_user_by_id(self, id):
@@ -148,7 +149,8 @@ class UserRepository:
             # Extract role names correctly
             department_name=user.department.department_name if user.department else None,
             permissions=list(permissions_set),
-            department={"id": user.department.id, "name": user.department.department_name} if user.department else None
+            department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
+            timezone=user.timezone if user.timezone else None
         )
 
     def update_user(self, user_data: UserUpdate):

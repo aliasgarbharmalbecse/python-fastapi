@@ -79,6 +79,7 @@ class UserResponse(UserBase):
     roles: Optional[List[dict]] = None
     permissions: Optional[List[str]] = None  # List of permission names
     department: dict
+    timezone: Optional[str] = None
     class Config:
         from_attributes = True  # Allows SQLAlchemy objects to be converted
 

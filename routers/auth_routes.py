@@ -8,8 +8,6 @@ from configurations.database import get_db
 from repositories.users.users_repository import UserRepository
 from utilities.auth_utlis import verify_password, generate_tokens, verify_access_token, generate_access_token, \
     verify_refresh_token, security
-from models.user_model import User
-from utilities.permission_utlis import register_permission, enforce_permissions_dependency
 
 router = APIRouter(
     prefix="/auth",

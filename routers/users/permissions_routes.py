@@ -35,3 +35,5 @@ async def assign_permissions(
     role_repo = RoleRepository(db)
     return role_repo.assign_permissions(permissions)
 
+
+## get role permissions endpoint to be implemented to check which role has which permissions
