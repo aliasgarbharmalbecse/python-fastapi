@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, selectinload
@@ -68,7 +69,8 @@ class UserRepository:
             phone=user.phone,
             roles=[{"name": role.name, "id": role.id} for role in roles],
             reports_to=user.reports_to,
-            department_name=department.department_name if department else None
+            department_name=department.department_name if department else None,
+            department={"id": department.id, "name": department.department_name} if department else None,
         )
 
     def get_all_users(self):
@@ -210,5 +212,9 @@ class UserRepository:
             firstname=user.firstname,
             lastname=user.lastname,
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
+            department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
         )
+
+    def get_users_by_ids(self, user_ids: List[int]):
+        return self.db.query(User).filter(User.id.in_(user_ids)).all()

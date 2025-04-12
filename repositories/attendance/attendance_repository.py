@@ -2,9 +2,14 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, Any, Type, List
 
+from sqlalchemy import Date, cast, exists
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.functions import now, func
+from sqlalchemy.sql.operators import and_
+
 from models.attendance_model import TimeLog, TimeSummary
 from schemas.attendance_schema import TimeLogRead, TimeSummaryRead, TimeLogCreate, TimeSummaryCreate
+
 
 class AttendanceRepository:
 
@@ -46,7 +51,7 @@ class AttendanceRepository:
         self.db.add(new_time_summary)
         self.db.commit()
         self.db.refresh(new_time_summary)
-        return TimeSummaryRead (
+        return TimeSummaryRead(
             id=new_time_summary.id,
             user_id=new_time_summary.user_id,
             date=new_time_summary.date,
@@ -75,3 +80,32 @@ class AttendanceRepository:
             TimeLog.punch_in_time >= start,
             TimeLog.punch_in_time <= end
         ).all()
+
+    def get_open_time_logs(self, start: datetime, end: datetime):
+        return self.db.query(TimeLog).filter(
+            TimeLog.punch_in_time >= start,
+            TimeLog.punch_in_time <= end,
+            TimeLog.punch_out_time.is_(None)
+        ).all()
+
+    def get_users_on_break(self):
+        return (
+            self.db.query(TimeLog.user_id)
+            .outerjoin(
+                TimeSummary,
+                and_(
+                    TimeLog.user_id == TimeSummary.user_id,
+                    TimeSummary.date == date.today()
+                )
+            )
+            .filter(
+                TimeLog.punch_out_time.isnot(None),
+                TimeSummary.user_id.is_(None)
+            )
+            .group_by(TimeLog.user_id)
+            .all()
+        )
+
+    def get_users_has_day_ended(self):
+        today = date.today()
+        return self.db.query(TimeSummary).filter(TimeSummary.date == today).all()

@@ -5,6 +5,7 @@ from datetime import datetime, date, time
 from sqlalchemy.orm import Session
 from configurations.database import get_db
 from models.user_model import User
+from repositories.users.users_repository import UserRepository
 from schemas.attendance_schema import TimeLogCreate, TimeSummaryRead, TimeLogRead, TimeSummaryCreate
 from utilities.permission_utlis import enforce_permissions_dependency, register_permission
 from repositories.attendance.attendance_repository import AttendanceRepository
@@ -78,6 +79,7 @@ async def day_end(
         db: Session = Depends(get_db),
         current_user: User = Depends(enforce_permissions_dependency)
 ):
+    #this is not optimized endpoint. This will need optimization in future
     load_dotenv()
     min_hours = os.getenv("MIN_WORK_HOURS_PER_DAY") or "8"
     user_id = current_user.get("sub")
@@ -96,6 +98,13 @@ async def day_end(
     attendance_repo = AttendanceRepository(db)
 
     # Close any open punch log
+    existing_log = attendance_repo.check_if_time_log_exists(user_id)
+    if existing_log:
+        existing_log.punch_out_time = datetime.utcnow()
+        existing_log.duration = (existing_log.punch_out_time - existing_log.punch_in_time).total_seconds()
+        db.commit()
+        db.refresh(existing_log)
+
 
     # Fetch logs for the day
     logs = attendance_repo.get_time_logs_for_range(user_id, start_utc, end_utc)
@@ -156,3 +165,38 @@ async def get_user_time_logs(
     logs = attendance_repo.get_time_logs_for_range(user_id, start_utc, end_utc)
 
     return logs
+
+
+@router.get("/active-status")
+@register_permission('view_user_status')
+async def get_user_active_status(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(enforce_permissions_dependency)
+):
+    now = datetime.utcnow()
+    today_start = datetime.combine(now.date(), time.min)
+    today_end = datetime.combine(now.date(), time.max)
+
+    attendance_repo = AttendanceRepository(db)
+    user_repo = UserRepository(db)
+
+    # 1. Users with open time logs (punched-in, not yet punched out)
+    open_logs = attendance_repo.get_open_time_logs(today_start, today_end)
+    open_user_ids = [log.user_id for log in open_logs]
+
+    # 2. Users who punched out today but do NOT have a time summary yet
+    punched_out_logs = attendance_repo.get_users_on_break()
+    break_user_ids = [log.user_id for log in punched_out_logs if log.user_id not in open_user_ids]
+
+    # 3. Users who have punched out and have a time summary
+    user_ended_work = attendance_repo.get_users_has_day_ended()
+    user_ended_word_ids = [log.user_id for log in user_ended_work]
+    users_punched_in = user_repo.get_users_by_ids(open_user_ids)
+    users_on_break = user_repo.get_users_by_ids(break_user_ids)
+    users_ended_work = user_repo.get_users_by_ids(user_ended_word_ids)
+
+    return {
+        "punched_in_users": [{"id": user.id, "name": f"{user.firstname} {user.lastname}"} for user in users_punched_in],
+        "on_break_users": [{"id": user.id, "name": f"{user.firstname} {user.lastname}"} for user in users_on_break],
+        "user_ended_work": [{"id": user.id, "name": f"{user.firstname} {user.lastname}"} for user in users_ended_work]
+    }

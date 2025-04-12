@@ -68,9 +68,9 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserBase):
-    is_active: Optional[bool]
+    is_active: Optional[bool] = None
     password: Optional[str] = None
-    roles: Optional[List[str]] = None
+    roles: Optional[List[UUID4]] = None
     department_name: Optional[str] = None
 
 

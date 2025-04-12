@@ -48,6 +48,7 @@ async def update_user(
         db: Session = Depends(get_db),
         current_user: User = Depends(enforce_permissions_dependency)
 ):
+    ## This api needs to change. Currently this doesn't work correctly.
     user = UserRepository(db)
     return user.update_user(user_data)
 
