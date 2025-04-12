@@ -68,9 +68,9 @@ class UserCreate(UserBase):
 
 
 class UserUpdate(UserBase):
-    is_active: Optional[bool]
+    is_active: Optional[bool] = None
     password: Optional[str] = None
-    roles: Optional[List[str]] = None
+    roles: Optional[List[UUID4]] = None
     department_name: Optional[str] = None
 
 
@@ -79,6 +79,7 @@ class UserResponse(UserBase):
     roles: Optional[List[dict]] = None
     permissions: Optional[List[str]] = None  # List of permission names
     department: dict
+    timezone: Optional[str] = None
     class Config:
         from_attributes = True  # Allows SQLAlchemy objects to be converted
 

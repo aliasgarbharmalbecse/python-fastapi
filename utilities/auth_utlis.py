@@ -80,6 +80,9 @@ def verify_refresh_token(token: str) -> Optional[dict]:
 def generate_tokens(user):
 
     roles = user.roles
+    if not roles:
+        raise HTTPException(status_code=400, detail="User has no assigned roles")
+
     access_context = [
         {
             "role": r["name"],
@@ -104,7 +107,8 @@ def generate_tokens(user):
             "hierarchy_level": min_level,
             "can_cross_departments": can_cross,
             "department": user.department_name or None,
-            "reports_to": str(user.reports_to) if user.reports_to else None
+            "reports_to": str(user.reports_to) if user.reports_to else None,
+            "timezone": user.timezone if hasattr(user, "timezone") else os.getenv("DEFAULT_TIMEZONE")
         }
     )
 
@@ -143,7 +147,8 @@ def generate_access_token(user):
             "hierarchy_level": min_level,
             "can_cross_departments": can_cross,
             "department": user.department_name or None,
-            "reports_to": str(user.reports_to) if user.reports_to else None
+            "reports_to": str(user.reports_to) if user.reports_to else None,
+            "timezone": user.timezone if hasattr(user, "timezone") else os.getenv("DEFAULT_TIMEZONE")
         }
     )
 
