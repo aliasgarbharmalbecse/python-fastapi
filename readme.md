@@ -1,32 +1,27 @@
-User Module
+**RUN APPLICATION**
+This application is dockerized. It uses uvicorn for local and guvicorn worker for production.
 
-database tables to be created
-- users
-  - id: uuid
-  - firstname
-  - lastname
-  - email
-  - phone
-  - department [fk to department id]
-  - role
-  - is_active
-  - hashed_password
-  - created_at
-- departments
-  - id: uuid
-  - department_name
-  - department_head: ref users:id
-  - users: relationship with users
-- roles
-  - admin
-  - manager
-  - employee
-- user_roles
-  - id
-  - user_id
-  - role_id
+If you are running this locally simply run the command
 
-RBAC implementation step
+``docker-compose -f docker-compose-dev.yml up --build``
+
+This will build the image and run it to. Moving further only run
+
+``docker-compose -f docker-compose-dev.yml up``
+
+If you are deploying on production, please run
+
+``docker-compose -f docker-compose-prod.yml up --build``
+
+each time you deploy the changes .
+
+Follow `.env-sample` to setup proper env variable.
+
+**Alembic**
+- There is change made in alembic/env.py for database url. 
+- Read about alembic more in its localized readme
+
+- RBAC implementation step
 
 - Each role is linked to one or more permissions.
 - Users are assigned one or more roles.
