@@ -1,0 +1,53 @@
+version: '3.9'
+
+services:
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - ENV=dev
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  #db container
+  db:
+    image: postgres:13
+    restart: always
+    shm_size: 1gb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres", "-d", "fastapi_db" ]
+      interval: 10s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data  # Persist data across container restarts
+    networks:
+      - app-network
+
+# Optionally, you can add adminer for easy database management:
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:  # Named volume to store Postgres data
+
+networks:
+  app-network:
+    driver: bridge
