@@ -6,6 +6,7 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - ENV=prod
+      - VIRTUAL_HOST=${DOMAIN_NAME}
     depends_on:
       db:
         condition: service_healthy
@@ -30,8 +31,33 @@ services:
       - postgres_data:/var/lib/postgresql/data  # Persist data across container restarts
     networks:
       - app-network
+      -
+  # Nginx reverse proxy container
+  nginx:
+    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    environment:
+      - DEFAULT_HOST=default.local
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - app-network
 
-    # Optionally, you can add adminer for easy database management:
+  # Let's Encrypt companion container for automatic SSL certificates
+  letsencrypt:
+    image: jwilder/docker-gen
+    container_name: letsencrypt
+    environment:
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - app-network
+
+  # Optionally, you can add adminer for easy database management:
   adminer:
     image: adminer
     restart: always
