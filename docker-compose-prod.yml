@@ -6,6 +6,7 @@ services:
     environment:
       - DATABASE_URL=${DATABASE_URL}
       - ENV=prod
+      - VIRTUAL_HOST=${DOMAIN_NAME}
     depends_on:
       db:
         condition: service_healthy
