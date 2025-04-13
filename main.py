@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-
 from sqlalchemy.orm import Session
-
 from configurations.startup_task import sync_permissions_to_db
 from routers.departments import department_routes
 from routers.users import role_routes, users_routes, permissions_routes
