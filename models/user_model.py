@@ -27,7 +27,7 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     timezone: Mapped[Optional[str]] = mapped_column(String, default="Asia/Kolkata")
     department_id: Mapped[Optional[uuid.UUID]] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("departments.id", ondelete="SET NULL"), nullable=True
+        UUID(as_uuid=True), ForeignKey("departments.id", ondelete="SET NULL", use_alter=True), nullable=True
     )
     reports_to: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
