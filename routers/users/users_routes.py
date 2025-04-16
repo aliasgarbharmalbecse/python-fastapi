@@ -31,15 +31,15 @@ async def get_all_users(db: Session = Depends(get_db), current_user: User = Depe
     user = UserRepository(db)
     return user.get_all_users()
 
-@router.get('/{id}', response_model=UserResponse, status_code=status.HTTP_200_OK)
+@router.get('/{user_id}', response_model=UserResponse, status_code=status.HTTP_200_OK)
 @register_permission('get_user_by_id')
 async def get_user_by_id(
-        id: UUID4 = Path(),
+        user_id: UUID4 = Path(),
         db: Session = Depends(get_db),
         current_user: User = Depends(enforce_permissions_dependency)
 ):
     user = UserRepository(db)
-    return user.get_user_by_id(id)
+    return user.get_user_by_id(user_id)
 
 @router.put('/update', status_code=status.HTTP_201_CREATED)
 @register_permission('update_user')

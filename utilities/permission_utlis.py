@@ -55,8 +55,8 @@ def enforce_permissions_dependency(
             raise HTTPException(status_code=403, detail="Permission denied")
 
     # Check if the route targets a specific user
-    target_user_id = request.path_params.get("user_id") or request.path_params.get("id")
-    print(target_user_id, "*********************** Target User Id ***********************")
+    target_user_id = request.path_params.get("user_id")
+
     if target_user_id:
         user_repo = UserRepository(db)
         target_user = user_repo.get_user_by_id(target_user_id)

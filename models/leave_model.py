@@ -29,6 +29,7 @@ class LeaveBalance(Base):
     quarter: Mapped[int] = mapped_column(Integer, nullable=False)
     leave_available: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     leave_taken: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    leave_requested: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     updated_at: Mapped[DateTime] = mapped_column(DateTime, default=None, nullable=True)
 
