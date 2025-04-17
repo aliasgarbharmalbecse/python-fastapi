@@ -33,6 +33,11 @@ class LeaveBalance(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime, default=datetime.now(timezone.utc))
     updated_at: Mapped[DateTime] = mapped_column(DateTime, default=None, nullable=True)
 
+    leave_type_obj = relationship("LeaveType", backref="leave_balances")
+    user = relationship('User', backref="leave_balance")
+
+
+
 class LeaveRequests(Base):
 
     __tablename__ = "leave_requests"
@@ -49,3 +54,7 @@ class LeaveRequests(Base):
     approver_comments: Mapped[str] = mapped_column(String(40), default=None, nullable=True)
     approver_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True),
                                                              ForeignKey("users.id", ondelete="SET NULL"), default=None, nullable=True)
+
+    user: Mapped["User"] = relationship("User", foreign_keys=[user_id], backref="leave_requests")
+    approver: Mapped[Optional["User"]] = relationship("User", foreign_keys=[approver_id])
+    leave_type_obj: Mapped["LeaveType"] = relationship("LeaveType", backref="leave_requests")

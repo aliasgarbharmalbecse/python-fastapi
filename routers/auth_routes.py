@@ -6,6 +6,7 @@ from starlette import status
 from schemas.auth_schema import AuthLogin
 from configurations.database import get_db
 from repositories.users.users_repository import UserRepository
+from schemas.users_schema import UserValidateResponse
 from utilities.auth_utlis import verify_password, generate_tokens, verify_access_token, generate_access_token, \
     verify_refresh_token, security
 
@@ -53,4 +54,31 @@ def refresh_access_token(
 
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
-    return generate_access_token(user)
+
+    # Extract permissions from roles
+    permissions_set = set()
+    for user_role in user.roles:
+        for permission in user_role.role.permissions:
+            permissions_set.add(permission.name)
+
+    user_response = UserValidateResponse(
+        id=user.id,
+        firstname=user.firstname,
+        lastname=user.lastname,
+        email=user.email,
+        phone=user.phone,
+        hashed_password=user.hashed_password,
+        roles=[{
+            "name": user_role.role.name,
+            "id": user_role.role.id,
+            "hierarchy_level": user_role.role.hierarchy_level,
+            "can_cross_departments": user_role.role.can_cross_departments
+        } for user_role in user.roles],
+        # Extract role names correctly
+        department_name=user.department.department_name if user.department else None,
+        permissions=list(permissions_set),
+        department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
+        timezone=user.timezone if user.timezone else None
+    )
+
+    return generate_access_token(user_response)

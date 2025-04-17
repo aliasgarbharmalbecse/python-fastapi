@@ -38,8 +38,25 @@ async def get_user_by_id(
         db: Session = Depends(get_db),
         current_user: User = Depends(enforce_permissions_dependency)
 ):
-    user = UserRepository(db)
-    return user.get_user_by_id(user_id)
+    user_repo = UserRepository(db)
+    user = user_repo.get_user_by_id(user_id)
+    return UserResponse(
+        id=user.id,
+        firstname=user.firstname,
+        lastname=user.lastname,
+        email=user.email,
+        phone=user.phone,
+        roles=[{
+            "name": user_role.role.name,
+            "id": user_role.role.id,
+            "hierarchy_level": user_role.role.hierarchy_level,
+            "can_cross_departments": user_role.role.can_cross_departments
+        } for user_role in user.roles],
+        # Extract role names correctly
+        department_name=user.department.department_name if user.department else None,
+        department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
+        timezone=user.timezone if user.timezone else None
+    )
 
 @router.put('/update', status_code=status.HTTP_201_CREATED)
 @register_permission('update_user')

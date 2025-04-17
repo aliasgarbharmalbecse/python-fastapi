@@ -1,8 +1,10 @@
 import datetime
 import uuid
 from fastapi import HTTPException
-from sqlalchemy.orm import Session
-from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveStatusEnum
+from sqlalchemy import and_
+from sqlalchemy.orm import Session, joinedload
+from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveStatusEnum, \
+    LeaveBalanceResponse
 from models.user_model import User
 from models.leave_model import LeaveRequests, LeaveType, LeaveBalance
 
@@ -117,3 +119,39 @@ class LeaveRepository:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
 
+    def get_user_leave_balance(self, user_id: uuid.UUID, year: int, quarter: int):
+        leave_balances = self.db.query(LeaveBalance).options(
+            joinedload(LeaveBalance.leave_type_obj),
+            joinedload(LeaveBalance.user)
+        ).filter(
+            LeaveBalance.user_id == user_id,
+            LeaveBalance.year == year,
+            LeaveBalance.quarter == quarter
+        ).all()
+
+        return [
+            LeaveBalanceResponse(
+                leave_type=lb.leave_type_obj.title,
+                user_id=lb.user_id,
+                user_name=f"{lb.user.firstname} {lb.user.lastname}",
+                leave_available=lb.leave_available,
+                leave_taken=lb.leave_taken,
+                leave_requested=lb.leave_requested,
+            )
+            for lb in leave_balances
+        ]
+
+    def get_leave_requests(self, user_id: uuid.UUID, from_date: datetime, to_date: datetime):
+
+        leave_requests = (
+            self.db.query(LeaveRequests)
+            .options(joinedload(LeaveRequests.user), joinedload(LeaveRequests.leave_type_obj))
+            .filter(
+                LeaveRequests.leave_from >= from_date,
+                LeaveRequests.leave_to <= to_date,
+                LeaveRequests.user_id == user_id
+            )
+            .all()
+        )
+
+        return leave_requests

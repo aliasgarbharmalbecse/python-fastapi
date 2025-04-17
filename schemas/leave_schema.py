@@ -43,3 +43,51 @@ class LeaveRequestOut(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class LeaveBalanceResponse(BaseModel):
+    leave_type: str
+    user_id: UUID
+    user_name: str
+    leave_available: int
+    leave_taken: int
+    leave_requested: int
+
+    class Config:
+        orm_mode = True
+
+
+class UserInfo(BaseModel):
+    id: UUID
+    firstname: str
+    lastname: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class LeaveTypeInfo(BaseModel):
+    id: UUID
+    title: str
+
+    model_config = {
+        "from_attributes": True
+    }
+
+
+class LeaveRequestsListResponse(BaseModel):
+    id: UUID
+    user: UserInfo
+    leave_type_obj: LeaveTypeInfo
+    application_date: datetime
+    leave_from: datetime
+    leave_to: datetime
+    leave_reason: str
+    leave_status: str
+    approved_date: Optional[datetime]
+    approver_comments: Optional[str]
+    approver_id: Optional[UUID]
+
+    model_config = {
+        "from_attributes": True
+    }

@@ -1,20 +1,17 @@
-from http.cookiejar import user_domain_match
 from typing import List, Optional
 from uuid import UUID
-
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from datetime import datetime, date, time
 from sqlalchemy.orm import Session
 from configurations.database import get_db
-from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate
+from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveBalanceResponse, \
+    LeaveRequestsListResponse
 from models.user_model import User
-from repositories.users.users_repository import UserRepository
 from utilities.permission_utlis import enforce_permissions_dependency, register_permission
 from utilities.time_utils import calculate_days, get_current_quarter
 from repositories.leaves.leave_repository import LeaveRepository
-from dotenv import load_dotenv
-import os
-import pytz
+import utilities.get_accessible_users as acc
+
 
 router = APIRouter(
     prefix="/leave",
@@ -22,7 +19,7 @@ router = APIRouter(
 )
 
 # Submit a leave request
-@router.post("/request/{user_id}", response_model=LeaveRequestOut)
+@router.post("/request/{user_id}", response_model=LeaveRequestOut, status_code=status.HTTP_201_CREATED)
 @register_permission('create_leave_request')
 def submit_leave_request(
         user_id: UUID,
@@ -56,7 +53,8 @@ def submit_leave_request(
 
     return submit_request
 
-@router.put('/update/{user_id}', response_model=LeaveRequestOut)
+
+@router.put('/update/{user_id}', response_model=LeaveRequestOut, status_code=status.HTTP_201_CREATED)
 @register_permission('leave_status_updates')
 def update_leave(
     user_id: UUID,
@@ -80,3 +78,60 @@ def update_leave(
         raise HTTPException(status_code=500, detail="Failed to update leave balance.")
 
     return LeaveRequestOut.model_validate(leave)
+
+
+@router.get(
+    '/balanace/{user_id}/',
+    response_model=List[LeaveBalanceResponse],
+    status_code=status.HTTP_200_OK
+)
+@register_permission('get_leave_balance')
+async def get_leave_balance(
+    user_id: UUID,
+    year: int = Query(None, description="Year to get leave balance. If not entered, current year will be taken"),
+    quarter: int = Query(None, description="Quarter (1 to 4) to filter, If not entered, current quarter will be taken"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(enforce_permissions_dependency)
+):
+    now = datetime.now()
+    year = year or now.year
+    quarter = quarter or ((now.month - 1) // 3 + 1)
+
+    leave_repo = LeaveRepository(db)
+    leave_balance = leave_repo.get_user_leave_balance(user_id, year, quarter)
+    return leave_balance
+
+@router.get('/request/{user_id}', response_model=list[LeaveRequestsListResponse], status_code=status.HTTP_200_OK)
+@register_permission('view_leave_requests')
+def get_user_leave_requests(
+    user_id: UUID,
+    from_date: date = Query(None, description="Enter from date in YYYY-MM-DD format. 1st Jan is default"),
+    to_date: date = Query(None, description="Enter to date in YYYY-MM-DD format.  31st Dec is default"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(enforce_permissions_dependency)
+):
+    # Set default date range to current year if not provided
+    current_year = datetime.now().year
+    from_date = from_date or date(current_year, 1, 1)
+    to_date = to_date or date(current_year, 12, 31)
+
+    # Convert to datetime
+    from_datetime = datetime.combine(from_date, datetime.min.time())
+    to_datetime = datetime.combine(to_date, datetime.max.time())
+
+    leave_repo = LeaveRepository(db)
+    leave_requests = leave_repo.get_leave_requests(user_id, from_datetime, to_datetime)
+
+    return leave_requests
+
+@router.get('/request', status_code=status.HTTP_200_OK)
+@register_permission('users_leave_request_all')
+async def get_users_leave_reqeusts(
+    from_date: date = Query(None, description="Enter from date in YYYY-MM-DD format. 1st Jan is default"),
+    to_date: date = Query(None, description="Enter to date in YYYY-MM-DD format.  31st Dec is default"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(enforce_permissions_dependency)
+):
+    user = acc.get_accessible_users(db, current_user)
+    return user
+

@@ -23,19 +23,16 @@ def get_user_min_hierarchy_from_token(user_dict: dict) -> int:
 
 
 def get_user_min_hierarchy_from_db(user_model) -> int:
-    if not hasattr(user_model, "roles") or not user_model.roles:
-        return (999)  #returning lowest level so higher level person can access if the user has no role
-
-    return min(role.get("hierarchy_level", 999) for role in user_model.roles)
-
+    return (
+        min((user_role.role.hierarchy_level for user_role in user_model.roles), default=999)
+    )
 
 def check_department_access(current_user, target_user) -> bool:
     department = target_user.department
-    if not department or not department.get("id"):
+    if not department or not department.id:
         return False
-
     return (
-            current_user.get("department") == department.get("name")
+            current_user.get("department") == department.department_name
             or can_access_cross_department(current_user)
     )
 
@@ -43,6 +40,9 @@ def check_department_access(current_user, target_user) -> bool:
 def check_hierarchy_access(current_user, target_user: User) -> bool:
     current_level = get_user_min_hierarchy_from_token(current_user)
     target_level = get_user_min_hierarchy_from_db(target_user)
+    print("@"*100)
+    print(current_level, "CURRENT USER LEVLEL")
+    print(target_level, "TARGET USER LEVEL")
     return current_level <= target_level
 
 
