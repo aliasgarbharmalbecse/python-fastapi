@@ -6,6 +6,7 @@ from routers.departments import department_routes
 from routers.users import role_routes, users_routes, permissions_routes
 from routers.attendance import attendance_routes
 from routers import auth_routes
+from routers.leaves import leaves_route
 from configurations.database import SessionLocal
 
 
@@ -27,3 +28,4 @@ app.include_router(role_routes.router)
 app.include_router(permissions_routes.router)
 app.include_router(users_routes.router)
 app.include_router(attendance_routes.router)
+app.include_router(leaves_route.router)

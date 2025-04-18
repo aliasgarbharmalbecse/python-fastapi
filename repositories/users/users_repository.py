@@ -118,6 +118,7 @@ class UserRepository:
             timezone=user.timezone if user.timezone else None
         )
 
+    ## I modified this function to not return pydentic model and stick to sqlalchemy model for better use.
     def get_user_by_id(self, id):
         user = (
             self.db.query(User)
@@ -135,25 +136,8 @@ class UserRepository:
         for user_role in user.roles:
             for permission in user_role.role.permissions:
                 permissions_set.add(permission.name)
-
-        return UserResponse(
-            id=user.id,
-            firstname=user.firstname,
-            lastname=user.lastname,
-            email=user.email,
-            phone=user.phone,
-            roles=[{
-                "name": user_role.role.name,
-                "id": user_role.role.id,
-                "hierarchy_level": user_role.role.hierarchy_level,
-                "can_cross_departments": user_role.role.can_cross_departments
-            } for user_role in user.roles],
-            # Extract role names correctly
-            department_name=user.department.department_name if user.department else None,
-            permissions=list(permissions_set),
-            department={"id": user.department.id, "name": user.department.department_name} if user.department else None,
-            timezone=user.timezone if user.timezone else None
-        )
+                
+        return user
 
     def update_user(self, user_data: UserUpdate):
         # Fetch existing user
