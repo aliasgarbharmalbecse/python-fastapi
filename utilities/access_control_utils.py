@@ -40,9 +40,6 @@ def check_department_access(current_user, target_user) -> bool:
 def check_hierarchy_access(current_user, target_user: User) -> bool:
     current_level = get_user_min_hierarchy_from_token(current_user)
     target_level = get_user_min_hierarchy_from_db(target_user)
-    print("@"*100)
-    print(current_level, "CURRENT USER LEVLEL")
-    print(target_level, "TARGET USER LEVEL")
     return current_level <= target_level
 
 

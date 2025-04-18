@@ -1,10 +1,12 @@
 import datetime
 import uuid
+from typing import Optional, List
+
 from fastapi import HTTPException
 from sqlalchemy import and_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveStatusEnum, \
-    LeaveBalanceResponse
+    LeaveBalanceResponse, PaginatedLeaveRequestsResponse, LeaveTypeResponse
 from models.user_model import User
 from models.leave_model import LeaveRequests, LeaveType, LeaveBalance
 
@@ -119,15 +121,20 @@ class LeaveRepository:
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Something went wrong: {str(e)}")
 
-    def get_user_leave_balance(self, user_id: uuid.UUID, year: int, quarter: int):
-        leave_balances = self.db.query(LeaveBalance).options(
+    def get_user_leave_balance(self, user_id: uuid.UUID, year: int, quarter: int, leave_type: Optional[uuid.UUID] = None):
+        query =  self.db.query(LeaveBalance).options(
             joinedload(LeaveBalance.leave_type_obj),
             joinedload(LeaveBalance.user)
         ).filter(
             LeaveBalance.user_id == user_id,
             LeaveBalance.year == year,
-            LeaveBalance.quarter == quarter
-        ).all()
+            LeaveBalance.quarter == quarter,
+        )
+
+        if leave_type:
+            query = query.filter(LeaveBalance.leave_type == leave_type)
+
+        leave_balances = query.all()
 
         return [
             LeaveBalanceResponse(
@@ -155,3 +162,40 @@ class LeaveRepository:
         )
 
         return leave_requests
+
+    def get_all_leave_requests(self, accessible_user_ids, from_date, to_date, leave_status, leave_type, limit, page):
+
+        query = self.db.query(LeaveRequests).filter(
+            LeaveRequests.user_id.in_(accessible_user_ids)
+        )
+
+        if from_date:
+            query = query.filter(LeaveRequests.leave_from >= datetime.datetime.combine(from_date, datetime.datetime.min.time()))
+        if to_date:
+            query = query.filter(LeaveRequests.leave_to <= datetime.datetime.combine(to_date, datetime.datetime.max.time()))
+        if leave_status:
+            query = query.filter(LeaveRequests.leave_status == leave_status)
+        if leave_type:
+            query = query.filter(LeaveRequests.leave_type == leave_type)
+
+        # Eager loading (optional optimization)
+        query = query.options(
+            selectinload(LeaveRequests.user),
+            selectinload(LeaveRequests.leave_type_obj)
+        )
+
+        total = query.count()
+        leave_requests = query.order_by(LeaveRequests.application_date.desc()).offset((page - 1) * limit).limit(
+            limit).all()
+
+        return PaginatedLeaveRequestsResponse(
+            total_records=total,
+            page=page,
+            limit=limit,
+            results=leave_requests  # Pydantic will auto-convert with `from_attributes=True`
+        )
+
+    def get_leave_types(self) -> List[LeaveTypeResponse]:
+        results = self.db.query(LeaveType).all()
+        ##model_validate() is the correct way to convert ORM models into Pydantic models when using from_attributes=True.
+        return [LeaveTypeResponse.model_validate(lt) for lt in results]

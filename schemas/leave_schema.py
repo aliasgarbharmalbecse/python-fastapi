@@ -1,6 +1,7 @@
+import uuid
 from enum import Enum
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 
@@ -87,6 +88,21 @@ class LeaveRequestsListResponse(BaseModel):
     approved_date: Optional[datetime]
     approver_comments: Optional[str]
     approver_id: Optional[UUID]
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class PaginatedLeaveRequestsResponse(BaseModel):
+    total_records: int
+    page: int
+    limit: int
+    results: List[LeaveRequestsListResponse]
+
+class LeaveTypeResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    carry_forward: bool
 
     model_config = {
         "from_attributes": True
