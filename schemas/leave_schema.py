@@ -107,3 +107,32 @@ class LeaveTypeResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class LeaveTypeCreate(BaseModel):
+    title: str
+    carry_forward: bool
+
+class LeaveBalanceCreate(BaseModel):
+    leave_type: UUID
+    user_id: UUID
+    year: int = Field(..., ge=2000, le=2100)
+    quarter: int = Field(..., ge=1, le=4)
+    leave_available: int = 0
+    leave_taken: int = 0
+    leave_requested: int = 0
+
+class LeaveBalanceCreateResponse(BaseModel):
+    id: UUID
+    leave_type: UUID
+    user_id: UUID
+    year: int
+    quarter: int
+    leave_available: int
+    leave_taken: int
+    leave_requested: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = {
+        "from_attributes": True
+    }
