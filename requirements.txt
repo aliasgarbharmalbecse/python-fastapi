@@ -1,7 +1,9 @@
 alembic==1.15.1
 annotated-types==0.7.0
 anyio==4.9.0
+async-timeout==5.0.1
 bcrypt==4.3.0
+cache==1.0.3
 certifi==2025.1.31
 cffi==1.17.1
 chardet==3.0.4
@@ -39,6 +41,7 @@ python-dotenv==1.0.1
 python-multipart==0.0.20
 pytz==2025.2
 PyYAML==6.0.2
+redis==5.2.1
 requests==2.22.0
 rsa==4.9
 six==1.17.0

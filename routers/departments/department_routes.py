@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Path
 from sqlalchemy.orm import Session
@@ -8,6 +10,7 @@ from schemas.department_schema import DepartmentCreate, DepartmentUpdate, Depart
 from repositories.departments.department_repository import DepartmentRepository
 from configurations.database import get_db
 from utilities.permission_utlis import register_permission, enforce_permissions_dependency
+from utilities.redis_cache import cache
 
 router = APIRouter(
     prefix="/departments",
@@ -32,7 +35,7 @@ async def create_department(
 
 
 #get department
-@router.get("/", status_code=status.HTTP_200_OK)
+@router.get("/", response_model=List[DepartmentResponse], status_code=status.HTTP_200_OK)
 @register_permission("get_all_departments")
 async def get_all_departments(
         db: Session = Depends(get_db),
@@ -40,7 +43,10 @@ async def get_all_departments(
 ):
     try:
         dept_repo = DepartmentRepository(db)
-        return dept_repo.get_all_departments()
+        departments = dept_repo.get_all_departments()
+        pydantic_departments = [DepartmentResponse.model_validate(dept) for dept in departments]
+        return pydantic_departments
+
     except Exception as e:
         raise HTTPException(status.HTTP_400_BAD_REQUEST)
 
