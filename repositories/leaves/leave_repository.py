@@ -3,7 +3,7 @@ import uuid
 from typing import Optional, List
 
 from fastapi import HTTPException
-from sqlalchemy import and_
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveStatusEnum, \
     LeaveBalanceResponse, PaginatedLeaveRequestsResponse, LeaveTypeResponse
@@ -199,3 +199,61 @@ class LeaveRepository:
         results = self.db.query(LeaveType).all()
         ##model_validate() is the correct way to convert ORM models into Pydantic models when using from_attributes=True.
         return [LeaveTypeResponse.model_validate(lt) for lt in results]
+
+    def create_leave_balance(self, payload):
+
+        result =  self.db.execute(
+            select(LeaveBalance).where(
+                LeaveBalance.user_id == payload.user_id,
+                LeaveBalance.leave_type == payload.leave_type,
+                LeaveBalance.year == payload.year,
+                LeaveBalance.quarter == payload.quarter
+            )
+        )
+
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            raise HTTPException(
+                400,
+                detail="Leave balance for the user and type already exists for the given period."
+            )
+
+        new_balance = LeaveBalance (
+            leave_type=payload.leave_type,
+            user_id=payload.user_id,
+            year=payload.year,
+            quarter=payload.quarter,
+            leave_available=payload.leave_available,
+            leave_taken=payload.leave_taken,
+            leave_requested=payload.leave_requested,
+        )
+
+        self.db.add(new_balance)
+
+        try:
+            self.db.commit()
+            self.db.refresh(new_balance)
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(
+                400,
+                detail="Integrity error: possibly duplicate entry."
+            )
+
+        return new_balance
+
+    def create_leave_type(self, payload):
+        leave_type = self.db.query(LeaveType).filter(LeaveType.title == payload.title).first()
+
+        if leave_type:
+            raise HTTPException(400, "Leave type already exists")
+
+        leave_type_records = LeaveType(
+            title=payload.title,
+            carry_forward=payload.carry_forward
+        )
+
+        self.db.add(leave_type_records)
+        self.db.commit()
+        return leave_type_records

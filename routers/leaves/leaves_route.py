@@ -5,7 +5,7 @@ from datetime import datetime, date, time
 from sqlalchemy.orm import Session
 from configurations.database import get_db
 from schemas.leave_schema import LeaveRequestCreate, LeaveRequestOut, LeaveApprovalUpdate, LeaveBalanceResponse, \
-    LeaveRequestsListResponse, LeaveTypeResponse
+    LeaveRequestsListResponse, LeaveTypeResponse, LeaveBalanceCreate, LeaveBalanceCreateResponse, LeaveTypeCreate
 from models.user_model import User
 from utilities.permission_utlis import enforce_permissions_dependency, register_permission
 from utilities.time_utils import calculate_days, get_current_quarter
@@ -17,6 +17,18 @@ router = APIRouter(
     prefix="/leave",
     tags=["Leave Management"]
 )
+
+@router.post("/leave-type", response_model=LeaveTypeResponse, status_code=status.HTTP_201_CREATED)
+@register_permission('create_leave_types')
+async def create_leave_balance(
+        payload: LeaveTypeCreate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(enforce_permissions_dependency)
+):
+    #implementation to allowed only leave addition for accessible user should be done. Not done currently
+    leave_repo = LeaveRepository(db)
+    return leave_repo.create_leave_type(payload)
+
 
 @router.get('/leave_type', response_model=List[LeaveTypeResponse] ,status_code=status.HTTP_200_OK)
 @register_permission('get_leaves_type')
@@ -88,6 +100,17 @@ def update_leave(
 
     return LeaveRequestOut.model_validate(leave)
 
+
+@router.post("/leave-balance", response_model=LeaveBalanceCreateResponse, status_code=status.HTTP_201_CREATED)
+@register_permission('create_leave_balance')
+async def create_leave_balance(
+        payload: LeaveBalanceCreate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(enforce_permissions_dependency)
+):
+    #implementation to allowed only leave addition for accessible user should be done. Not done currently
+    leave_repo = LeaveRepository(db)
+    return leave_repo.create_leave_balance(payload)
 
 @router.get(
     '/balanace/{user_id}/',
